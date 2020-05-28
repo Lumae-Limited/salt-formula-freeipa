@@ -13,7 +13,7 @@ freeipa_push_principal:
   file.managed:
     - name: /tmp/principal.keytab
     - source: {{ client.get("install_principal", {}).get("source", "salt://freeipa/files/principal.keytab") }}
-    - mode: {{ client.get("install_principal", {}).get("mode", 0600) }}
+    - mode: {{ client.get("install_principal", {}).get("mode", 0640) }}
     - user: {{ client.get("install_principal", {}).get("file_user", "root") }}
     - group: {{ client.get("install_principal", {}).get("file_group", "root") }}
     - unless:
