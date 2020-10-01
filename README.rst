@@ -52,6 +52,25 @@ Then add to your pillar:
           file_user: "root"
           file_group: "root"
 
+Alternatively, and more securely and flexibly, you can put your keytab contents
+in a pillar and use the following form:
+
+.. code-block:: yaml
+
+    freeipa:
+      client:
+        enabled: true
+        server: ipa.example.com
+        domain: {{ salt['grains.get']('domain', '') }}
+        realm: {{ salt['grains.get']('domain', '').upper() }}
+        hostname: {{ salt['grains.get']('fqdn', '') }}
+        install_principal:
+          pillar: secret:keytab
+          mode: 0600
+          principal_user: "service-account"
+          file_user: "root"
+          file_group: "root"
+
 This will allow your client to use FreeIPA's JSON interface to create a host 
 entry with a One Time Password and then register to the FreeIPA server. For 
 security purposes, the kerberos principal will only be pushed down to the client 

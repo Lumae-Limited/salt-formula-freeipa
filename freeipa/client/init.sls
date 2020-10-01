@@ -8,19 +8,24 @@ include:
 
 {%- if client.install_principal is defined %}
 {%- set otp = salt['random.get_str'](20) %}
+{%- set install_principal = client.get('install_principal', {}) %}
 
 freeipa_push_principal:
   file.managed:
     - name: /tmp/principal.keytab
-    - source: {{ client.get("install_principal", {}).get("source", "salt://freeipa/files/principal.keytab") }}
-    - mode: {{ client.get("install_principal", {}).get("mode", 0654) }}
-    - user: {{ client.get("install_principal", {}).get("file_user", "root") }}
-    - group: {{ client.get("install_principal", {}).get("file_group", "root") }}
+{%- if install_principal.pillar is defined %}
+    - contents_pillar: {{ install_principal.pillar }}
+{%- else %}
+    - source: {{ install_principal.get("source", "salt://freeipa/files/principal.keytab") }}
+{%- endif %}
+    - mode: {{ install_principal.get("mode", 0654) }}
+    - user: {{ install_principal.get("file_user", "root") }}
+    - group: {{ install_principal.get("file_group", "root") }}
     - unless:
       - ipa-client-install --unattended 2>&1 | grep "IPA client is already configured on this system"
 freeipa_get_ticket:
   cmd.run:
-    - name: kinit {{ client.get("install_principal", {}).get("principal_user", "root") }}@{{ client.get("realm", "") }} -kt /tmp/principal.keytab
+    - name: kinit {{ install_principal.get("principal_user", "root") }}@{{ client.get("realm", "") }} -kt /tmp/principal.keytab
     - require:
       - file: freeipa_push_principal
     - onchanges:
