@@ -44,6 +44,7 @@ freeipa_push_principal:
       - file: freeipa_push_encoded
     - require:
       - file: freeipa_push_encoded
+#}
 
 freeipa_get_ticket:
   cmd.run:
@@ -170,6 +171,5 @@ krb5_conf:
     - template: jinja
     - source: salt://freeipa/files/krb5.conf
 
-#}
 {%- endif %}
 
