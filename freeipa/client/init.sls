@@ -34,13 +34,11 @@ freeipa_push_encoded:
 # Put an unencoded version of the principal keytab in a file
 freeipa_push_principal:
   cmd.run:
-{#
-{%- if encoding=='base64' %}
+{% if encoding=='base64' %}
     - name: 'base64 --decode {{ principal_encfile }} > {{ principal_keytab }} && chown {{ user }} {{ principal_keytab }} && chgrp {{ group }} principal_keytab && chmod {{ mode }} principal_keytab
-{%- else %}
+{% else %}
     - name: 'cat {{ principal_encfile }} > {{ principal_keytab }} && chown {{ user }} {{ principal_keytab }} && chgrp {{ group }} principal_keytab && chmod {{ mode }} principal_keytab
-{%- endif %}
-#}
+{% endif %}
     - onchanges:
       - file: freeipa_push_encoded
     - require:
