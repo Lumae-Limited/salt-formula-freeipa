@@ -26,13 +26,14 @@ freeipa_push_encoded:
 {%- else %}
     - source: {{ install_principal.get("source", "salt://freeipa/files/principal.keytab") }}
 {%- endif %}
+#}
     - mode: {{ mode }}
     - user: {{ user }}
     - group: {{ group }}
     - unless:
       - ipa-client-install --unattended 2>&1 | grep "IPA client is already configured on this system"
 
-
+{#
 # Put an unencoded version of the principal keytab in a file
 freeipa_push_principal:
   cmd.run:
