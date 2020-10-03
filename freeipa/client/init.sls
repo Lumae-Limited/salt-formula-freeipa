@@ -12,6 +12,12 @@ freeipa_client_pkgs:
   pkg.installed:
     - names: {{ client.pkgs|yaml }}
 
+krb5_conf:
+  file.managed:
+    - name: {{ client.krb5_conf }}
+    - template: jinja
+    - source: salt://freeipa/files/krb5.conf
+
 {%- if client.install_principal is defined %}
 
 {%- set otp = salt['random.get_str'](20) %}
@@ -57,6 +63,7 @@ freeipa_get_ticket:
     - require:
       - cmd: freeipa_decode_principal
       - pkg: freeipa_client_pkgs
+      - file: krb5_conf
     - onchanges:
       - cmd: freeipa_decode_principal
 
@@ -168,12 +175,6 @@ freeipa_client_install:
       - service: sssd_service
       - file: ldap_conf
       - file: krb5_conf
-
-krb5_conf:
-  file.managed:
-    - name: {{ client.krb5_conf }}
-    - template: jinja
-    - source: salt://freeipa/files/krb5.conf
 
 {%- endif %}
 
