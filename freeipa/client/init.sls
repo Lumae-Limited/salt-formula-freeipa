@@ -32,7 +32,7 @@ freeipa_push_encoded:
       - ipa-client-install --unattended 2>&1 | grep "IPA client is already configured on this system"
 
 # Put an unencoded version of the principal keytab in a file
-freeipa_push_principal:
+freeipa_decode_principal:
   cmd.run:
 {% if encoding=='base64' %}
     - name: 'base64 --decode {{ principal_encfile }} > {{ principal_keytab }} && chown {{ user }} {{ principal_keytab }} && chgrp {{ group }} {{ principal_keytab }} && chmod {{ mode }} {{ principal_keytab }}'
@@ -48,9 +48,9 @@ freeipa_get_ticket:
   cmd.run:
     - name: kinit {{ install_principal.get("principal_user", "root") }}@{{ client.get("realm", "") }} -kt {{ principal_keytab }}
     - require:
-      - file: freeipa_push_principal
+      - cmd: freeipa_decode_principal
     - onchanges:
-      - file: freeipa_push_principal
+      - cmd: freeipa_decode_principal
 
 freeipa_host_add:
   cmd.run:
@@ -86,7 +86,7 @@ freeipa_host_add:
     - require_in:
       - cmd: freeipa_client_install
     - onchanges:
-      - file: freeipa_push_principal
+      - cmd: freeipa_decode_principal
 
 freeipa_cleanup_cookiejar:
   file.absent:
@@ -116,7 +116,7 @@ freeipa_cleanup_keytab:
     - require_in:
       - cmd: freeipa_client_install
     - onchanges:
-      - cmd: freeipa_push_principal
+      - cmd: freeipa_decode_principal
 
 freeipa_kdestroy:
   cmd.run:
@@ -126,7 +126,7 @@ freeipa_kdestroy:
     - require_in:
       - cmd: freeipa_client_install
     - onchanges:
-      - file: freeipa_push_principal
+      - cmd: freeipa_decode_principal
 {%- endif %}
 
 {%- if client.get('enabled', False) %}
@@ -160,9 +160,9 @@ freeipa_client_install:
       - file: krb5_conf
 {% if client.install_principal is defined %}
     - require:
-      - file: freeipa_push_principal
+      - cmd: freeipa_decode_principal
     - onchanges:
-      - file: freeipa_push_principal
+      - cmd: freeipa_decode_principal
 {% endif %}
 
 krb5_conf:
