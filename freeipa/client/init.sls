@@ -16,6 +16,7 @@ include:
 {%- set mode = install_principal.get("mode", 0600) %}
 {%- set encoding = install_principal.get("encoding", None) %}
 
+{#
 # Put the encoded principal keytab in a file
 freeipa_push_encoded:
   file.managed:
@@ -169,4 +170,6 @@ krb5_conf:
     - template: jinja
     - source: salt://freeipa/files/krb5.conf
 
+#}
 {%- endif %}
+
