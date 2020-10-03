@@ -158,10 +158,10 @@ freeipa_client_install:
       - service: sssd_service
       - file: ldap_conf
       - file: krb5_conf
-    {%- if client.install_principal is defined %}
+{% if client.install_principal is defined %}
     - onchanges:
       - file: freeipa_push_principal
-    {%- endif %}
+{% endif %}
 
 krb5_conf:
   file.managed:
