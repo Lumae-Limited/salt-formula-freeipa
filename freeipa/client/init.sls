@@ -159,6 +159,8 @@ freeipa_client_install:
       - file: ldap_conf
       - file: krb5_conf
 {% if client.install_principal is defined %}
+    - require:
+      - file: freeipa_push_principal
     - onchanges:
       - file: freeipa_push_principal
 {% endif %}
