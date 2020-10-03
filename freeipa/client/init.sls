@@ -35,9 +35,9 @@ freeipa_push_encoded:
 freeipa_push_principal:
   cmd.run:
 {% if encoding=='base64' %}
-    - name: 'base64 --decode {{ principal_encfile }} > {{ principal_keytab }} && chown {{ user }} {{ principal_keytab }} && chgrp {{ group }} principal_keytab && chmod {{ mode }} principal_keytab
+    - name: 'base64 --decode {{ principal_encfile }} > {{ principal_keytab }} && chown {{ user }} {{ principal_keytab }} && chgrp {{ group }} {{ principal_keytab }} && chmod {{ mode }} {{ principal_keytab }}'
 {% else %}
-    - name: 'cat {{ principal_encfile }} > {{ principal_keytab }} && chown {{ user }} {{ principal_keytab }} && chgrp {{ group }} principal_keytab && chmod {{ mode }} principal_keytab
+    - name: 'cat {{ principal_encfile }} > {{ principal_keytab }} && chown {{ user }} {{ principal_keytab }} && chgrp {{ group }} {{ principal_keytab }} && chmod {{ mode }} {{ principal_keytab }}'
 {% endif %}
     - onchanges:
       - file: freeipa_push_encoded
