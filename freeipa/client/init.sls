@@ -43,10 +43,10 @@ freeipa_push_principal:
     - name: 'cat {{ principal_encfile }} > {{ principal_keytab }} && chown {{ user }} {{ principal_keytab }} && chgrp {{ group }} principal_keytab && chmod {{ mode }} principal_keytab
 {%- endif %}
 #}
-  - onchanges:
-      - file: freeipa_push_encoded
-    - require:
-      - file: freeipa_push_encoded
+    - onchanges:
+        - file: freeipa_push_encoded
+      - require:
+        - file: freeipa_push_encoded
 
 freeipa_get_ticket:
   cmd.run:
