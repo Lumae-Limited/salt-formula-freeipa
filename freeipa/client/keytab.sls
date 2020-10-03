@@ -1,12 +1,5 @@
 {%- from "freeipa/map.jinja" import client, server, ipa_host with context %}
 
-include:
-  {%- if server.get('enabled', False) %}
-  - freeipa.server
-  {%- else %}
-  - freeipa.client
-  {%- endif %}
-
 {%- for keytab_file, keytab in client.get("keytab", {}).iteritems() %}
 
 freeipa_keytab_{{ keytab_file }}:

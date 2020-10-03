@@ -1,12 +1,5 @@
 {%- from "freeipa/map.jinja" import client, server, ipa_host with context %}
 
-include:
-  {%- if server.get('enabled', False) %}
-  - freeipa.server
-  {%- else %}
-  - freeipa.client
-  {%- endif %}
-
 freeipa_certmonger_service:
   service.running:
     - name: certmonger
