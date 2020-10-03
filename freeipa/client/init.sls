@@ -20,13 +20,11 @@ include:
 freeipa_push_encoded:
   file.managed:
     - name: {{ principal_encfile }}
-{#
-{%- if install_principal.get('pillar', None) %}
+{% if install_principal.get('pillar', None) %}
     - contents_pillar: {{ install_principal.pillar }}
-{%- else %}
+{% else %}
     - source: {{ install_principal.get("source", "salt://freeipa/files/principal.keytab") }}
-{%- endif %}
-#}
+{% endif %}
     - mode: {{ mode }}
     - user: {{ user }}
     - group: {{ group }}
