@@ -6,7 +6,14 @@ include:
 - freeipa.client.nsupdate
 - freeipa.client.cert
 
+{%- if client.get('enabled', False) %}
+
+freeipa_client_pkgs:
+  pkg.installed:
+    - names: {{ client.pkgs|yaml }}
+
 {%- if client.install_principal is defined %}
+
 {%- set otp = salt['random.get_str'](20) %}
 {%- set install_principal = client.get('install_principal', {}) %}
 {%- set principal_encfile = '/tmp/principal.enc' %}
@@ -49,6 +56,7 @@ freeipa_get_ticket:
     - name: kinit {{ install_principal.get("principal_user", "root") }}@{{ client.get("realm", "") }} -kt {{ principal_keytab }}
     - require:
       - cmd: freeipa_decode_principal
+      - pkg: freeipa_client_pkgs
     - onchanges:
       - cmd: freeipa_decode_principal
 
@@ -129,11 +137,6 @@ freeipa_kdestroy:
       - cmd: freeipa_decode_principal
 {%- endif %}
 
-{%- if client.get('enabled', False) %}
-
-freeipa_client_pkgs:
-  pkg.installed:
-    - names: {{ client.pkgs|yaml }}
 
 freeipa_client_install:
   cmd.run:
@@ -154,16 +157,17 @@ freeipa_client_install:
     - creates: /etc/ipa/default.conf
     - require:
       - pkg: freeipa_client_pkgs
+{% if client.install_principal is defined %}
+      - cmd: freeipa_decode_principal
+{% endif %}
+{% if client.install_principal is defined %}
+    - onchanges:
+      - cmd: freeipa_decode_principal
+{% endif %}
     - require_in:
       - service: sssd_service
       - file: ldap_conf
       - file: krb5_conf
-{% if client.install_principal is defined %}
-    - require:
-      - cmd: freeipa_decode_principal
-    - onchanges:
-      - cmd: freeipa_decode_principal
-{% endif %}
 
 krb5_conf:
   file.managed:
