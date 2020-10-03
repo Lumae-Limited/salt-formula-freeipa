@@ -32,7 +32,6 @@ freeipa_push_encoded:
     - unless:
       - ipa-client-install --unattended 2>&1 | grep "IPA client is already configured on this system"
 
-#}
 
 # Put an unencoded version of the principal keytab in a file
 freeipa_push_principal:
@@ -46,6 +45,7 @@ freeipa_push_principal:
       - file: freeipa_push_encoded
     - require:
       - file: freeipa_push_encoded
+#}
 
 freeipa_get_ticket:
   cmd.run:
