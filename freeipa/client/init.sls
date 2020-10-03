@@ -9,27 +9,49 @@ include:
 {%- if client.install_principal is defined %}
 {%- set otp = salt['random.get_str'](20) %}
 {%- set install_principal = client.get('install_principal', {}) %}
+{%- set principal_encfile = '/tmp/principal.enc' %}
+{%- set principal_keytab = '/tmp/principal.keytab' %}
+{%- set user = install_principal.get("file_user", "root") %}
+{%- set group = install_principal.get("file_user", "root") %}
+{%- set mode = install_principal.get("mode", 0600) %}
+{%- set encoding = install_principal.get("encoding", None) %}
 
-freeipa_push_principal:
+# Put the encoded principal keytab in a file
+freeipa_push_encoded:
   file.managed:
-    - name: /tmp/principal.keytab
+    - name: {{ principal_encfile }}
 {%- if install_principal.pillar is defined %}
     - contents_pillar: {{ install_principal.pillar }}
 {%- else %}
     - source: {{ install_principal.get("source", "salt://freeipa/files/principal.keytab") }}
 {%- endif %}
-    - mode: {{ install_principal.get("mode", 0654) }}
-    - user: {{ install_principal.get("file_user", "root") }}
-    - group: {{ install_principal.get("file_group", "root") }}
+    - mode: {{ mode }}
+    - user: {{ user }}
+    - group: {{ group }}
     - unless:
       - ipa-client-install --unattended 2>&1 | grep "IPA client is already configured on this system"
+
+# Put an unencoded version of the principal keytab in a file
+freeipa_push_principal:
+  cmd.run:
+{%- if encoding=='base64' %}
+    - name: 'base64 --decode {{ principal_encfile }} > {{ principal_keytab }} && chown {{ user }} {{ principal_keytab }} && chgrp {{ group }} principal_keytab && chmod {{ mode }} principal_keytab
+{%- else %}
+    - name: 'cat {{ principal_encfile }} > {{ principal_keytab }} && chown {{ user }} {{ principal_keytab }} && chgrp {{ group }} principal_keytab && chmod {{ mode }} principal_keytab
+{%- endif %}
+  - onchanges:
+      - file: freeipa_push_encoded
+    - require:
+      - file: freeipa_push_encoded
+
 freeipa_get_ticket:
   cmd.run:
-    - name: kinit {{ install_principal.get("principal_user", "root") }}@{{ client.get("realm", "") }} -kt /tmp/principal.keytab
+    - name: kinit {{ install_principal.get("principal_user", "root") }}@{{ client.get("realm", "") }} -kt {{ principal_keytab }}
     - require:
       - file: freeipa_push_principal
     - onchanges:
       - file: freeipa_push_principal
+
 freeipa_host_add:
   cmd.run:
     - name: >
@@ -72,25 +94,37 @@ freeipa_cleanup_cookiejar:
     - require:
       - cmd: freeipa_host_add
     - require_in:
-      -cmd: freeipa_client_install
+      - cmd: freeipa_client_install
     - onchanges:
       - cmd: freeipa_host_add
-freeipa_cleanup_keytab:
+
+freeipa_cleanup_encfile:
   file.absent:
-    - name: /tmp/principal.keytab
+    - name: {{ principal_encfile }}
     - require:
       - cmd: freeipa_host_add
     - require_in:
-      -cmd: freeipa_client_install
+      - cmd: freeipa_client_install
     - onchanges:
+      - cmd: freeipa_push_encoded
+
+freeipa_cleanup_keytab:
+  file.absent:
+    - name: {{ principal_keytab }}
+    - require:
       - cmd: freeipa_host_add
+    - require_in:
+      - cmd: freeipa_client_install
+    - onchanges:
+      - cmd: freeipa_push_principal
+
 freeipa_kdestroy:
   cmd.run:
     - name: kdestroy
     - require:
       - cmd: freeipa_host_add
     - require_in:
-      -cmd: freeipa_client_install
+      - cmd: freeipa_client_install
     - onchanges:
       - file: freeipa_push_principal
 {%- endif %}
