@@ -87,25 +87,11 @@ And then use the following pillar data:
 
 This will allow your client to use FreeIPA's JSON interface to create a host 
 entry with a One Time Password and then register to the FreeIPA server. For 
-security purposes, the kerberos principal will only be pushed down to the client 
-if the installer reports it is not registered to the FreeIPA server and will be 
-removed from the client as soon as the endpoint has registered with the FreeIPA 
-server.
+security purposes, the kerberos principal will only be pushed down to the
+client if the installer reports it is not registered to the FreeIPA server
+and will be removed from the client as soon as the endpoint has registered
+with the FreeIPA server.
 
-Additionally, the openssh formula (see 
-https://github.com/salt-formulas/salt-formula-openssh) is needed and is a 
-dependency for this formula. Configure it thusly:
-
-.. code-block:: yaml
-
-    openssh:
-      server:
-        public_key_auth: true
-        gssapi_auth: true
-        kerberos_auth: false
-        authorized_keys_command:
-          command: /usr/bin/sss_ssh_authorizedkeys
-          user: nobody
 
 If you wish to update DNS records using nsupdate, add:
 
