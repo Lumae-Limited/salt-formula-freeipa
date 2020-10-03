@@ -53,8 +53,13 @@ Then add to your pillar:
           file_group: "root"
 
 Alternatively, and more securely and flexibly, you can put your keytab
-contents in a pillar in base64 format, rely on default file permissinos
-and use the following form:
+contents in a pillar in encrypted base64 format (assuming you have
+gpg pillar encryption enabled) and rely on default
+file permissions.  Something like:
+
+`` cat ./principal.keytab |base64 -w 9999|gpg --armor --batch --trust-model always --encrypt -r saltmaster``
+
+And then use the following pillar data:
 
 .. code-block:: yaml
 
@@ -69,6 +74,16 @@ and use the following form:
           pillar: secret:keytab
 	  encoding: base64
           principal_user: "service-account"
+    secret:
+      keytab: |
+        -----BEGIN PGP MESSAGE-----
+        Version: GnuPG v1
+
+        hQEMA+0ehg1bhRv5AQf9FXM/iKQrf3rOyG3ucaWYZhmtDe/9qmnrWn7E3W7mmq+6
+        XyLCzHdf8tXCU8Fr2hvL042qrzLSmd/s+fcXVV5Ttgz8Y5p3ZPBnGhQEHurd79Ex
+        FtXLjoZa96lMefvO7/M=
+        =SJWr
+        -----END PGP MESSAGE-----        
 
 This will allow your client to use FreeIPA's JSON interface to create a host 
 entry with a One Time Password and then register to the FreeIPA server. For 
