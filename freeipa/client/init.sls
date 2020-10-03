@@ -106,7 +106,7 @@ freeipa_cleanup_encfile:
     - require_in:
       - cmd: freeipa_client_install
     - onchanges:
-      - cmd: freeipa_push_encoded
+      - file: freeipa_push_encoded
 
 freeipa_cleanup_keytab:
   file.absent:
