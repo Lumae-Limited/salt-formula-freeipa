@@ -23,6 +23,12 @@ freeipa_client_pkgs:
 {%- set mode = install_principal.get("mode", 0600) %}
 {%- set encoding = install_principal.get("encoding", None) %}
 
+# Check to see if we need to do a client install
+freeipa_need_newclient:
+  test.succeed_with_changes:
+    - unless:
+      - ipa-client-install --unattended 2>&1 | grep "IPA client is already configured on this system"
+    
 # Put the encoded principal keytab in a file
 freeipa_push_principal:
   file.managed:
@@ -35,8 +41,8 @@ freeipa_push_principal:
     - mode: {{ mode }}
     - user: {{ user }}
     - group: {{ group }}
-    - unless:
-      - ipa-client-install --unattended 2>&1 | grep "IPA client is already configured on this system"
+    - onchanges:
+      - test: feeeipa_client_newclient
 
 # Put an unencoded version of the principal keytab in a file
 freeipa_setup_principal:
@@ -46,8 +52,10 @@ freeipa_setup_principal:
 {% else %}
     - name: 'cat {{ principal_encfile }} > {{ principal_keytab }} && chown {{ user }} {{ principal_keytab }} && chgrp {{ group }} {{ principal_keytab }} && chmod {{ mode }} {{ principal_keytab }}'
 {% endif %}
-    - onchanges:
+    - require:
       - file: freeipa_push_principal
+    - onchanges:
+      - test: freeipa_need_newclient
 
 # An initial copy of the krb5 conf file before ipa-client-install clobbers it
 krb5_conf_initial:
@@ -56,7 +64,7 @@ krb5_conf_initial:
     - template: jinja
     - source: salt://freeipa/files/krb5.conf
     - onchanges:
-      - cmd: freeipa_setup_principal
+      - test: freeipa_need_newclient
 
 freeipa_get_ticket:
   cmd.run:
@@ -64,8 +72,9 @@ freeipa_get_ticket:
     - require:
       - pkg: freeipa_client_pkgs
       - file: krb5_conf_initial
-    - onchanges:
       - cmd: freeipa_setup_principal
+    - onchanges:
+      - test: freeipa_need_newclient
 
 freeipa_host_add:
   cmd.run:
@@ -98,50 +107,50 @@ freeipa_host_add:
         }' https://{{ ipa_servers[0] }}/ipa/json
     - require:
       - cmd: freeipa_get_ticket
+    - onchanges:
+      - cmd: freeipa_need_newclient
     - require_in:
       - cmd: freeipa_client_install
-    - onchanges:
-      - cmd: freeipa_setup_principal
 
 freeipa_cleanup_cookiejar:
   file.absent:
     - name: /tmp/cookiejar
     - require:
       - cmd: freeipa_host_add
+    - onchanges:
+      - cmd: freeipa_need_newclient
     - require_in:
       - cmd: freeipa_client_install
-    - onchanges:
-      - cmd: freeipa_host_add
 
 freeipa_cleanup_encfile:
   file.absent:
     - name: {{ principal_encfile }}
     - require:
-      - cmd: freeipa_host_add
+      - file: freeipa_setup_principal
+    - onchanges:
+      - file: freeipa_need_newclient
     - require_in:
       - cmd: freeipa_client_install
-    - onchanges:
-      - file: freeipa_push_principal
 
 freeipa_cleanup_keytab:
   file.absent:
     - name: {{ principal_keytab }}
     - require:
       - cmd: freeipa_host_add
+    - onchanges:
+      - cmd: freeipa_need_newclient
     - require_in:
       - cmd: freeipa_client_install
-    - onchanges:
-      - cmd: freeipa_setup_principal
 
 freeipa_kdestroy:
   cmd.run:
     - name: kdestroy
     - require:
       - cmd: freeipa_host_add
+    - onchanges:
+      - cmd: freeipa_need_newclient
     - require_in:
       - cmd: freeipa_client_install
-    - onchanges:
-      - cmd: freeipa_setup_principal
 {%- endif %}
 
 
