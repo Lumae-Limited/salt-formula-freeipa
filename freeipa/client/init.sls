@@ -118,7 +118,7 @@ freeipa_cleanup_cookiejar:
     - require:
       - cmd: freeipa_host_add
     - onchanges:
-      - cmd: freeipa_need_newclient
+      - test: freeipa_need_newclient
     - require_in:
       - cmd: freeipa_client_install
 
@@ -148,7 +148,7 @@ freeipa_kdestroy:
     - require:
       - cmd: freeipa_host_add
     - onchanges:
-      - cmd: freeipa_need_newclient
+      - test: freeipa_need_newclient
     - require_in:
       - cmd: freeipa_client_install
 {%- endif %}
