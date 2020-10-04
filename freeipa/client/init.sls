@@ -12,12 +12,6 @@ freeipa_client_pkgs:
   pkg.installed:
     - names: {{ client.pkgs|yaml }}
 
-krb5_conf:
-  file.managed:
-    - name: {{ client.krb5_conf }}
-    - template: jinja
-    - source: salt://freeipa/files/krb5.conf
-
 {%- if client.install_principal is defined %}
 
 {%- set otp = salt['random.get_str'](20) %}
@@ -30,7 +24,7 @@ krb5_conf:
 {%- set encoding = install_principal.get("encoding", None) %}
 
 # Put the encoded principal keytab in a file
-freeipa_push_encoded:
+freeipa_push_principal:
   file.managed:
     - name: {{ principal_encfile }}
 {% if install_principal.get('pillar', None) %}
@@ -45,7 +39,7 @@ freeipa_push_encoded:
       - ipa-client-install --unattended 2>&1 | grep "IPA client is already configured on this system"
 
 # Put an unencoded version of the principal keytab in a file
-freeipa_decode_principal:
+freeipa_setup_principal:
   cmd.run:
 {% if encoding=='base64' %}
     - name: 'base64 --decode {{ principal_encfile }} > {{ principal_keytab }} && chown {{ user }} {{ principal_keytab }} && chgrp {{ group }} {{ principal_keytab }} && chmod {{ mode }} {{ principal_keytab }}'
@@ -53,19 +47,25 @@ freeipa_decode_principal:
     - name: 'cat {{ principal_encfile }} > {{ principal_keytab }} && chown {{ user }} {{ principal_keytab }} && chgrp {{ group }} {{ principal_keytab }} && chmod {{ mode }} {{ principal_keytab }}'
 {% endif %}
     - onchanges:
-      - file: freeipa_push_encoded
-    - require:
-      - file: freeipa_push_encoded
+      - file: freeipa_push_principal
+
+# An initial copy of the krb5 conf file before ipa-client-install clobbers it
+krb5_conf_initial:
+  file.managed:
+    - name: {{ client.krb5_conf }}
+    - template: jinja
+    - source: salt://freeipa/files/krb5.conf
+    - onchanges:
+      - cmd: freeipa_setup_principal
 
 freeipa_get_ticket:
   cmd.run:
     - name: kinit {{ install_principal.get("principal_user", "root") }}@{{ client.get("realm", "") }} -kt {{ principal_keytab }}
     - require:
-      - cmd: freeipa_decode_principal
       - pkg: freeipa_client_pkgs
-      - file: krb5_conf
+      - file: krb5_conf_initial
     - onchanges:
-      - cmd: freeipa_decode_principal
+      - cmd: freeipa_setup_principal
 
 freeipa_host_add:
   cmd.run:
@@ -101,7 +101,7 @@ freeipa_host_add:
     - require_in:
       - cmd: freeipa_client_install
     - onchanges:
-      - cmd: freeipa_decode_principal
+      - cmd: freeipa_setup_principal
 
 freeipa_cleanup_cookiejar:
   file.absent:
@@ -121,7 +121,7 @@ freeipa_cleanup_encfile:
     - require_in:
       - cmd: freeipa_client_install
     - onchanges:
-      - file: freeipa_push_encoded
+      - file: freeipa_push_principal
 
 freeipa_cleanup_keytab:
   file.absent:
@@ -131,7 +131,7 @@ freeipa_cleanup_keytab:
     - require_in:
       - cmd: freeipa_client_install
     - onchanges:
-      - cmd: freeipa_decode_principal
+      - cmd: freeipa_setup_principal
 
 freeipa_kdestroy:
   cmd.run:
@@ -141,7 +141,7 @@ freeipa_kdestroy:
     - require_in:
       - cmd: freeipa_client_install
     - onchanges:
-      - cmd: freeipa_decode_principal
+      - cmd: freeipa_setup_principal
 {%- endif %}
 
 
@@ -165,11 +165,11 @@ freeipa_client_install:
     - require:
       - pkg: freeipa_client_pkgs
 {% if client.install_principal is defined %}
-      - cmd: freeipa_decode_principal
+      - cmd: freeipa_setup_principal
 {% endif %}
 {% if client.install_principal is defined %}
     - onchanges:
-      - cmd: freeipa_decode_principal
+      - cmd: freeipa_setup_principal
 {% endif %}
     - require_in:
       - service: sssd_service
@@ -177,4 +177,10 @@ freeipa_client_install:
       - file: krb5_conf
 
 {%- endif %}
+
+krb5_conf:
+  file.managed:
+    - name: {{ client.krb5_conf }}
+    - template: jinja
+    - source: salt://freeipa/files/krb5.conf
 
