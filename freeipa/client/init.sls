@@ -42,7 +42,7 @@ freeipa_push_principal:
     - user: {{ user }}
     - group: {{ group }}
     - onchanges:
-      - test: feeeipa_client_newclient
+      - test: feeeipa_need_newclient
 
 # Put an unencoded version of the principal keytab in a file
 freeipa_setup_principal:
