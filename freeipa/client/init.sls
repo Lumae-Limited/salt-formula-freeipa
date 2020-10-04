@@ -126,9 +126,9 @@ freeipa_cleanup_encfile:
   file.absent:
     - name: {{ principal_encfile }}
     - require:
-      - file: freeipa_setup_principal
+      - cmd: freeipa_setup_principal
     - onchanges:
-      - file: freeipa_need_newclient
+      - test: freeipa_need_newclient
     - require_in:
       - cmd: freeipa_client_install
 
@@ -138,7 +138,7 @@ freeipa_cleanup_keytab:
     - require:
       - cmd: freeipa_host_add
     - onchanges:
-      - cmd: freeipa_need_newclient
+      - test: freeipa_need_newclient
     - require_in:
       - cmd: freeipa_client_install
 
