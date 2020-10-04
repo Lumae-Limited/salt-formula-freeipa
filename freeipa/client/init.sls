@@ -108,7 +108,7 @@ freeipa_host_add:
     - require:
       - cmd: freeipa_get_ticket
     - onchanges:
-      - cmd: freeipa_need_newclient
+      - test: freeipa_need_newclient
     - require_in:
       - cmd: freeipa_client_install
 
