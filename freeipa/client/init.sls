@@ -163,12 +163,16 @@ freeipa_client_install:
         {%- if client.realm is defined %} --realm {{ client.realm }}{%- endif %}
         --hostname {{ ipa_host }}
         {%- if otp is defined %}
-        -w {{ otp }}
+        --password {{ otp }}
         {%- else %}
-        -w {{ client.otp }}
+        --password {{ client.otp }}
         {%- endif %}
         {%- if client.get('mkhomedir', True) %} --mkhomedir{%- endif %}
         {%- if client.dns.updates %} --enable-dns-updates{%- endif %}
+        {%- if client.get('noac', False) %} --noac{%- endif %}
+        {%- if client.get('no_ssh', False) %} --no-ssh{%- endif %}
+        {%- if client.get('no_sshd', False) %} --no-sshd{%- endif %}
+        {%- if client.get('no_ntp', False) %} --no-ntp{%- endif %}
         --unattended
     - creates: /etc/ipa/default.conf
     - require:
