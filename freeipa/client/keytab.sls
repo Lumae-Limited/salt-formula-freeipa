@@ -1,6 +1,6 @@
 {%- from "freeipa/map.jinja" import client, server, ipa_host with context %}
 
-{%- for keytab_file, keytab in client.get("keytab", {}).iteritems() %}
+{%- for keytab_file, keytab in client.get("keytab", {}).items() %}
 
 freeipa_keytab_{{ keytab_file }}:
   file.managed:
