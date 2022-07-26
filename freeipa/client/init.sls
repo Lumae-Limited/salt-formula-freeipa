@@ -13,14 +13,17 @@ freeipa_client_pkgs:
     - names: {{ client.pkgs|yaml }}
 
 {%- if client.install_principal is defined %}
-
+{%- if salt['salt_version.greater_than']('Aluminium') %}
+{%- set otp = salt['random.get_str'](length=20, punctuation=False) %}
+{%- else %}
 {%- set otp = salt['random.get_str'](20) %}
+{%- endif %}
 {%- set install_principal = client.get('install_principal', {}) %}
 {%- set principal_encfile = '/tmp/principal.enc' %}
 {%- set principal_keytab = '/tmp/principal.keytab' %}
 {%- set user = install_principal.get("file_user", "root") %}
 {%- set group = install_principal.get("file_user", "root") %}
-{%- set mode = install_principal.get("mode", 0600) %}
+{%- set mode = install_principal.get("mode", 0640) %}
 {%- set encoding = install_principal.get("encoding", None) %}
 
 # Check to see if we need to do a client install
@@ -28,7 +31,7 @@ freeipa_need_newclient:
   test.succeed_with_changes:
     - unless:
       - ipa-client-install --unattended 2>&1 | grep "IPA client is already configured on this system"
-    
+
 # Put the encoded principal keytab in a file
 freeipa_push_principal:
   file.managed:
@@ -163,13 +166,13 @@ freeipa_client_install:
         {%- if client.realm is defined %} --realm {{ client.realm }}{%- endif %}
         --hostname {{ ipa_host }}
         {%- if otp is defined %}
-        --password {{ otp }}
+        -w '{{ otp }}'
         {%- else %}
-        --password {{ client.otp }}
+        -w '{{ client.otp }}'
         {%- endif %}
         {%- if client.get('mkhomedir', True) %} --mkhomedir{%- endif %}
         {%- if client.dns.updates %} --enable-dns-updates{%- endif %}
-        {%- if client.get('noac', False) %} --noac{%- endif %}
+        {%- if client.get('noac', False) %}{%- endif %}
         {%- if client.get('no_ssh', False) %} --no-ssh{%- endif %}
         {%- if client.get('no_sshd', False) %} --no-sshd{%- endif %}
         {%- if client.get('no_ntp', False) %} --no-ntp{%- endif %}
@@ -186,8 +189,8 @@ freeipa_client_install:
 {% endif %}
     - require_in:
       - service: sssd_service
-      - file: ldap_conf
-      - file: krb5_conf
+#      - file: ldap_conf
+#      - file: krb5_conf
 
 {%- endif %}
 
@@ -196,4 +199,3 @@ krb5_conf:
     - name: {{ client.krb5_conf }}
     - template: jinja
     - source: salt://freeipa/files/krb5.conf
-
