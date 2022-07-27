@@ -1,5 +1,6 @@
 {%- from "freeipa/map.jinja" import client,server with context %}
 
+
 sssd_service:
   service.running:
     - name: sssd
@@ -63,4 +64,3 @@ pam_auth_update:
       - file: pam_mkhomedir_config
 {%- endif %}
 {%- endif %}
-
